@@ -10,6 +10,7 @@
 /**
  * Joe Zim's jQuery Pub/Sub Plugin
  * Version: 1.1
+ * Supported jQuery Versions: 1.4.3+
  * 
  * This script adds publish and subscribe functionality to jQuery's utility
  * function arsenal. There are numerous plugins that bring in this functionality
