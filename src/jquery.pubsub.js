@@ -167,7 +167,7 @@
 		// topics must either be a string, or have a property named topics that is a string
 		if (!topics || ($.type(topics) !== "string" && (!topics.topics || $.type(topics.topics) !== "string"))) {
 			// If it isn't valid, return null
-			return null;
+			return $;
 		}
 
 		// If the handler was used, then split the handle object into the two arguments
@@ -216,7 +216,7 @@
 	$.publish = function (topics, data) {
 		// Return null if topics isn't a string
 		if (!topics || $.type(topics) !== "string") {
-			return null;
+			return $;
 		}
 
 		// Split the topics up into an array of topics
