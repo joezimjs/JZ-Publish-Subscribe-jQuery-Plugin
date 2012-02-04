@@ -9,7 +9,7 @@
 
 /**
  * Joe Zim's jQuery Pub/Sub Plugin
- * Version: 1.1.1
+ * Version: 1.2
  * Supported jQuery Versions: 1.4.3+
  * 
  * This script adds publish and subscribe functionality to jQuery's utility
@@ -36,6 +36,17 @@
  *	var handle = $.subscribe("foo bar baz", function (topic, data) {
  *		console.log(data, topic);
  *	});
+ *
+ *
+ *	// Subscribe with a context
+ *	// Callback now has its this variable assigned to the specified object
+ *	var obj = {
+ *		data: 0,
+ *		func: function (topic, data) {
+ *			console.log(data, topic, this.data);
+ *		}
+ *	}
+ *	var handle = $.subscribe("foo", obj.func, obj);
  *
  *
  * Unsubscribing:
@@ -113,14 +124,18 @@
 	var subscriptions = {};
 
 	/**
-	 * jQuery.subscribe( topics, callback )
+	 * jQuery.subscribe( topics, callback[, context] )
 	 * - topics (String): 1 or more topic names, separated by a space, to subscribe to
 	 * - callback (Function): function to be called when the given topic(s) is published to
+	 * - context (Object): an object to call the function on
 	 * returns: { "topics": topics, "callback": callback } or null if invalid arguments
 	 */
-	$.subscribe = function (topics, callback) {
+	$.subscribe = function (topics, callback, context) {
 		var topicArr, 
 			usedTopics = {};
+
+		// If no context was set, assign an empty object to the context
+		context = context || {};
 		
 		// Make sure that each argument is valid
 		if ($.type(topics) !== "string" || !$.isFunction(callback)) {
@@ -148,11 +163,11 @@
 			}
 
 			// Add the callback function to the end of the array of callbacks assigned to the specified topic
-			subscriptions[topic].push(callback);
+			subscriptions[topic].push([callback,context]);
 		});
 
 		// Return a handle that can be used to unsubscribe
-		return { "topics" : topics, "callback" : callback };
+		return { topics: topics, callback: callback };
 	};
 
 	/**
@@ -196,8 +211,8 @@
 				delete subscriptions[topic];
 			} else {
 				// Otherwise a callback is specified; iterate through this topic to find the correct callback			
-				$.each(currTopic, function (i, func) {
-					if (func === callback) {
+				$.each(currTopic, function (i, subscription) {
+					if (subscription[0] === callback) {
 						currTopic.splice(i, 1);
 						return false; // break
 					}
@@ -231,8 +246,8 @@
 
 			if (subscriptions[topic]) {
 				// Iterate over each subscriber and call the callback function
-				$.each(subscriptions[topic], function (i, func) {
-					func.call($, topic, data);
+				$.each(subscriptions[topic], function (i, subscription) {
+					subscription[0].call(subscription[1], topic, data);
 				});
 			}
 		});
