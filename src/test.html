@@ -1,0 +1,90 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8">
+	<title>Testing JZ Publish/Subscribe</title>
+</head>
+<body>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.js"></script>
+	<script type="text/javascript" src="jquery.pubsub.js"></script>
+	<script type="text/javascript">
+	
+	var obj = {
+		data: true,
+		func: function (t,d) { 
+			console.log("this.data = " +this.data + "; t = " +t+ "; d = " +d+ ";");
+		},
+		unfunc: function (t,d) { 
+			console.log("this.data = " +this.data + "; t = " +t+ "; d = " +d+ "; UNSUB");
+			$.unsubscribe(t, obj.unfunc);
+		}
+	}
+	
+	$.subscribe('test', obj.func);
+	$.subscribe('test', obj.func, obj);
+	
+	$.publish('test','data1');
+	console.info("-----publish finished-----: t=test; d=data1; 1=undefined, 2=true");
+	
+	$.unsubscribe('test', obj.func);
+	
+	$.publish('test', 'data2');
+	console.info("-----publish finished-----: t=test; d=data2; 1=true");
+	
+	$.unsubscribe('test', obj.func, obj);
+	
+	$.publish('test', 'data3');
+	console.info("-----publish finished-----: t=test; d=data3; 0");
+	
+	var h1 = $.subscribe('test', obj.func);
+	
+	$.publish('test', 'data4');
+	console.info("-----publish finished-----: t=test; d=data4; 1=undefined");
+	
+	var h2 = $.subscribe('test', obj.func, obj);
+	
+	$.publish('test', 'data5');
+	console.info("-----publish finished-----: t=test; d=data5; 1=undefined, 2=true");
+	
+	$.unsubscribe(h1);
+	
+	$.publish('test', 'data6');
+	console.info("-----publish finished-----: t=test; d=data6; 1=true");
+	
+	$.unsubscribe(h2);
+	
+	$.publish('test', 'data7');
+	console.info("-----publish finished-----: t=test; d=data7; 0");
+	
+	$.subscribe('test', obj.func);
+	$.subscribe('test', obj.func);
+	$.subscribe('test', obj.func);
+	$.subscribe('test', obj.func);
+	$.subscribe('test', obj.func);
+	$.subscribe('test', obj.func, obj);
+	$.subscribe('test', obj.func, obj);
+	$.subscribe('test', obj.func, obj);
+	$.subscribe('test', obj.func, obj);
+	$.subscribe('test', obj.func, obj);
+	
+	$.publish('test', 'data8');
+	console.info("-----publish finished-----: t=test; d=data8; 1-5=undefined, 6-10=true");
+	
+	$.unsubscribe('test');
+	
+	$.publish('test', 'data9');
+	console.info("-----publish finished-----: t=test; d=data9; 0");
+	
+	$.subscribe('test', obj.unfunc);
+	$.subscribe('test', obj.unfunc);
+	$.subscribe('test', obj.unfunc);
+	$.subscribe('test', obj.unfunc);
+	
+	$.publish('test', 'data10');
+	console.info("-----publish finished-----: t=test; d=data10; 4=undefined; UNSUB");
+	
+	$.publish('test', 'data11');
+	console.info("-----publish finished-----: t=test; d=data11; 0");
+	</script>
+</body>
+</html>
