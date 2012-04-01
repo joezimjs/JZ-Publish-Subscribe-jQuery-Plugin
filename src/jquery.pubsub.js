@@ -9,7 +9,7 @@
 
 /**
  * Joe Zim's jQuery Pub/Sub Plugin
- * Version: 1.2
+ * Version: 1.3
  * Supported jQuery Versions: 1.4.3+
  * 
  * This script adds publish and subscribe functionality to jQuery's utility
@@ -56,10 +56,11 @@
  *	$.unsubscribe(handle);
  *
  *
- *	// Unsubscribe by specifying the topics and callback
+ *	// Unsubscribe by specifying the topics, callback, and context (if one was
+ *	// when subscribed).
  *	// Note: if you use an anonymous in the $.subscribe call, you can retrieve a
  *	// reference to the callback from the handle's 'callback' property
- *	$.unsubscribe("foo bar", callback_reference);
+ *	$.unsubscribe("foo bar", callback_reference, obj);
  *	// or
  *	$.unsubscribe("foo bar", handle.callback);
  *
@@ -108,7 +109,8 @@
  *		topics : "the topics you sent in",
  *		callback : function () { 
  *			// this is the callback function you sent in
- *		}
+ *		},
+ *		context : contextObjYouSentIn || {}
  *	};
  *
  * Callback Topic Argument:
@@ -121,7 +123,10 @@
 
 (function ($) {
 	'use strict';
-	var subscriptions = {};
+
+	var subscriptions = {},
+		ctx = {},
+		publishing = false;
 
 	/**
 	 * jQuery.subscribe( topics, callback[, context] )
@@ -135,7 +140,7 @@
 			usedTopics = {};
 
 		// If no context was set, assign an empty object to the context
-		context = context || {};
+		context = context || ctx;
 		
 		// Make sure that each argument is valid
 		if ($.type(topics) !== "string" || !$.isFunction(callback)) {
@@ -167,15 +172,22 @@
 		});
 
 		// Return a handle that can be used to unsubscribe
-		return { topics: topics, callback: callback };
+		return { topics: topics, callback: callback, context:context };
 	};
 
 	/**
-	 * jQuery.unsubscribe( topics[, callback] )
+	 * jQuery.unsubscribe( topics[, callback[, context]] )
 	 * - topics (String): 1 or more topic names, separated by a space, to unsubscribe from
 	 * - callback (Function): function to be removed from the topic's subscription list. If none is supplied, all functions are removed from given topic(s)
+	 * - context (Object): object that was used as the context in the jQuery.subscribe() call.
 	 */
-	$.unsubscribe = function (topics, callback) {
+	$.unsubscribe = function (topics, callback, context) {
+		// If someone is trying to unsubscribe while we're publishing, put it off until publishing is done
+		if (publishing) {
+			$.unsubscribe.queue.push([topics, callback, context]);
+			return $;
+		}
+	
 		var topicArr,
 			usedTopics = {};
 			
@@ -188,8 +200,12 @@
 		// If the handler was used, then split the handle object into the two arguments
 		if (topics.topics) {
 			callback = callback || topics.callback;
+			context = context || topics.context;
 			topics = topics.topics;
 		}
+		
+		// If no context was provided, then use the default context
+		context = context || ctx;
 
 		// Split space-separated topics into an array of topics
 		topicArr = topics.split(" ");
@@ -212,7 +228,7 @@
 			} else {
 				// Otherwise a callback is specified; iterate through this topic to find the correct callback			
 				$.each(currTopic, function (i, subscription) {
-					if (subscription[0] === callback) {
+					if (subscription[0] === callback && subscription[1] === context) {
 						currTopic.splice(i, 1);
 						return false; // break
 					}
@@ -222,6 +238,22 @@
 		
 		return $;
 	};
+	
+	$.unsubscribe.queue = [];
+	$.unsubscribe.resume = function() {
+		// If we're still publishing, do nothing
+		if (publishing) {
+			return;
+		}
+		
+		// Go through the queue and run unsubscribe again
+		var e;
+		while (e = $.unsubscribe.queue.shift()) {
+			console.log('retry unsubscribe ', e);
+			$.unsubscribe(e[0], e[1], e[2]);
+		}
+		
+	};
 
 	/**
 	 * jQuery.publish( topics[, data] )
@@ -229,6 +261,9 @@
 	 * - data: any data (in any format) you wish to give to the subscribers
 	 */
 	$.publish = function (topics, data) {
+		// Let the plugin know we're publishing so that we don't do any unsubscribes until we're done
+		publishing = true;
+	
 		// Return null if topics isn't a string
 		if (!topics || $.type(topics) !== "string") {
 			return $;
@@ -251,6 +286,10 @@
 				});
 			}
 		});
+		
+		// Now that we're done publishing, we need to resume any unsubscribes that were called during publishing
+		publishing = false;
+		$.unsubscribe.resume();
 		
 		return $;
 	};
