@@ -103,8 +103,9 @@
  *
  * Handle:
  *	The handle that is returned from the $.subscribe function is simply an object
- *	with two properties, named "topics" and "callback", that correspond to the two
- *	parameters that you sent in:
+ *	with three properties, named "topics", "callback", and "context" that correspond
+ *	to the three parameters that you sent in (or context will be a blank object if
+ *	no context was provided):
  *	handle = {
  *		topics : "the topics you sent in",
  *		callback : function () { 
