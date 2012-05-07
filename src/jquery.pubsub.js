@@ -8,7 +8,7 @@
  */
 
 /**
- * Joe Zim's jQuery Pub/Sub Plugin
+ * Joe Zim's jQuery Pub/Sub Plugin (JZ Publish/Subscribe)
  * Version: 1.3
  * Supported jQuery Versions: 1.4.3+
  * 
@@ -122,7 +122,7 @@
  *	topic that is published.
  */
 
-(function ($) {
+;(function ($) {
 	'use strict';
 
 	var subscriptions = {},
